@@ -1,26 +1,141 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------- Base (v3-safe) ---------- */
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
   }
+  body {
+    @apply min-h-screen bg-brand-bg text-brand-text
+           dark:bg-dark-bg dark:text-dark-text
+           antialiased leading-relaxed;
+    margin: 0;
+  }
+
+  /* Headings: comic display font + subtle outline */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+    -webkit-text-stroke: 0.6px rgba(0,0,0,0.12);
+    text-decoration: none;
+  }
+
+  /* Page max width and centering */
+  body > *:not(script) {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  h1 { @apply text-4xl md:text-5xl mb-4; }
+  h2 { @apply text-2xl md:text-3xl mt-10 mb-3; }
+  h3 { @apply text-xl mt-6 mb-2; }
+  p  { @apply text-lg; }
+  ul { @apply list-disc pl-6; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- Components (v3-safe) ---------- */
+@layer components {
+  /* Pretty buttons (default) */
+  button {
+    @apply inline-flex items-center gap-2 rounded-xl border-2 border-black px-4 py-2
+           font-display shadow-[3px_3px_0_rgba(0,0,0,0.35)]
+           bg-brand-blue text-white transition-transform;
+  }
+  button:hover { transform: translateY(-2px); }
+
+  /* File input / selects */
+  select, input[type="file"] {
+    @apply rounded-xl border-2 border-black px-3 py-1 bg-white dark:bg-gray-800
+           shadow-[2px_2px_0_rgba(0,0,0,0.25)];
+  }
+
+  /* Comic-styled reusable card */
+  .comic-card {
+    @apply bg-white dark:bg-gray-800 border-2 border-black rounded-2xl shadow-lg p-6;
+  }
+
+  /* Upload (blue) button */
+  .comic-button-blue {
+    @apply bg-blue-500 text-white font-display border-2 border-black rounded-xl px-4 py-2 shadow-md;
+  }
+  .comic-button-blue:hover { @apply bg-blue-600 shadow-lg; }
+
+  /* Analyze (green) button */
+  .comic-button-green {
+    @apply bg-green-500 text-white font-display border-2 border-black rounded-xl px-4 py-2 shadow-md;
+  }
+  .comic-button-green:hover { @apply bg-green-600 shadow-lg; }
+
+  /* “Card-like” accordions */
+  details {
+    @apply my-4 rounded-2xl border-2 border-black bg-white dark:bg-gray-900
+           shadow-[6px_6px_0_rgba(0,0,0,0.25)];
+  }
+  details > summary {
+    @apply cursor-pointer select-none px-4 py-3 text-xl font-display flex items-center gap-2;
+    list-style: none;
+    background-color: #fde047;
+    color: #111827;
+    border-radius: 1rem; /* rounds all corners when closed */
+}
+details[open] > summary {
+    border-radius: 1rem 1rem 0 0; /* rounds only top corners when open */
+}
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary { @apply border-b-2 border-black; }
+  details > *:not(summary) { @apply px-4 py-4; }
+
+  /* Footer */
+  .rs-footnote { @apply text-sm opacity-80 mt-8; }
+}
+
+/* ---------- Small extras ---------- */
+.shadow-comic-sm     { box-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+.shadow-comic-lg     { box-shadow: 4px 4px 0 rgba(0,0,0,0.4); }
+.shadow-comic-yellow { box-shadow: 4px 4px 0 rgba(250,204,21,0.8); }
+
+/* Simple hover “pop” */
+button, select, label {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+button:hover, select:hover, label:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+}
+
+/* Hide default disclosure marker */
+details > summary::-webkit-details-marker { display: none; }
+
+/* ---------- Defensive fixes ---------- */
+
+/* Kill mysterious underline under header/logo */
+header,
+header * {
+  border-bottom: none !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+header::before,
+header::after,
+header h1::before,
+header h1::after,
+h1::before,
+h1::after {
+  display: none !important;
+  content: "" !important;
+  height: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Force same yellow in dark mode */
+.dark details > summary {
+  background-color: #fde047 !important;
+  color: #111827 !important;
 }

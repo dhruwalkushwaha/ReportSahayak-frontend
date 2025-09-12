@@ -1,102 +1,205 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState } from "react";
+import { useTheme } from "next-themes";
+
+type ParsedReport = any;
+type AnalysisResponse = {
+  summary?: string;
+  details?: Record<string, any[]>;
+  disclaimer?: string;
+};
+
+export default function Home(): JSX.Element {
+  const [file, setFile] = useState<File | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [details, setDetails] = useState<Record<string, any[]> | null>(null);
+  const [disclaimer, setDisclaimer] = useState<string | null>(null);
+  const [lang, setLang] = useState<"en" | "hi">("en");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { theme, setTheme } = useTheme();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
+  };
+
+  const handleAnalyze = async () => {
+    setError(null);
+    if (!file) {
+      setError("Please choose a PDF report first.");
+      return;
+    }
+
+    setLoading(true);
+    setSummary(null);
+    setDetails(null);
+    setDisclaimer(null);
+
+    try {
+      // 1) Upload + parse
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("http://localhost:8000/upload-report/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed (${uploadRes.status})`);
+      }
+      const parsed: ParsedReport = await uploadRes.json();
+
+      // 2) Analyze
+      const analyzeRes = await fetch("http://127.0.0.1:8000/analyze-report/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parsed_report: parsed, language: lang }),
+      });
+
+      if (!analyzeRes.ok) {
+        throw new Error(`Analysis failed (${analyzeRes.status})`);
+      }
+
+      const data: AnalysisResponse = await analyzeRes.json();
+
+      setSummary(data.summary ?? null);
+      setDetails(data.details ?? null);
+      setDisclaimer(data.disclaimer ?? null);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message ?? "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen font-sans px-4">
+      {/* HEADER */}
+      <header className="text-center py-10">
+        <h1 className="text-5xl font-display shadow-comic-lg">
+          ReportSahayak <span className="text-red-600">🩸📊</span>
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
+          Your friendly AI blood report whisperer.
+        </p>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* CONTROLS */}
+      <section className="max-w-3xl mx-auto comic-card mb-10">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-center">
+          <label
+            className="comic-button-blue cursor-pointer flex items-center gap-2"
+            aria-label="Upload report"
+            title="Upload PDF report"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <span>Upload Report</span>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              className="sr-only"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </label>
+
+          {file && (
+            <p className="truncate max-w-xs text-sm italic" title={file.name}>
+              {file.name}
+            </p>
+          )}
+
+          <button
+            onClick={handleAnalyze}
+            className="comic-button-green"
+            disabled={loading}
+            aria-busy={loading}
           >
-            Read our docs
-          </a>
+            {loading ? "Analyzing…" : "Analyze Report"}
+          </button>
+
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as "en" | "hi")}
+            className="rounded-xl border-2 border-black px-3 py-1 bg-white dark:bg-gray-700 text-sm"
+            aria-label="Select language"
+          >
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+          </select>
+
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="comic-card w-10 h-10 flex items-center justify-center"
+            aria-label="Toggle theme"
+            title="Toggle theme"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+        {error && (
+          <div className="mt-4 text-sm text-red-600" role="alert">
+            {error}
+          </div>
+        )}
+      </section>
+
+      {/* SUMMARY */}
+      {summary && (
+        <section className="max-w-3xl mx-auto comic-card mb-8">
+          <h2 className="text-2xl font-display text-blue-600 mb-3">
+            {lang === "hi" ? "सारांश" : "Summary"}
+          </h2>
+          <p>{summary}</p>
+        </section>
+      )}
+
+      {/* DETAILS */}
+      {details && (
+        <section className="max-w-3xl mx-auto comic-card mb-8">
+          <h2 className="text-2xl font-display text-blue-600 mb-3">
+            {lang === "hi" ? "विस्तृत विश्लेषण" : "Detailed Analysis"}
+          </h2>
+
+          {Object.entries(details).map(([sectionName, items]) => (
+            <details key={sectionName}>
+              <summary className="rounded-t-2xl">{sectionName}</summary>
+
+              <ul className="list-disc pl-6 pr-4 py-2 space-y-2">
+                {items.map((item: any, idx: number) => (
+                  <li key={idx}>
+                    <p className="font-semibold">{item.test_name}</p>
+                    <p className="text-sm">Value: {item.value}</p>
+                    {item.status && <p className="text-sm">{item.status}</p>}
+                    {item.analogy && (
+                      <p className="text-sm italic">{item.analogy}</p>
+                    )}
+                    {item.explanation && (
+                      <p className="text-sm">{item.explanation}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </section>
+      )}
+
+      {/* DISCLAIMER */}
+      {disclaimer && (
+        <section className="max-w-3xl mx-auto comic-card mb-8 text-sm italic text-gray-700 dark:text-gray-300">
+          {disclaimer}
+        </section>
+      )}
+
+      {/* FOOTER */}
+      <footer className="text-center text-sm text-gray-500 dark:text-gray-400 py-6">
+        © 2025 ReportSahayak
       </footer>
     </div>
   );
