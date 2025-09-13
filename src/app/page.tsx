@@ -44,10 +44,11 @@ export default function Home(): JSX.Element {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadRes = await fetch("http://localhost:8000/upload-report/", {
-        method: "POST",
-        body: formData,
-      });
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const uploadRes = await fetch(`${backendUrl}/upload-report/`, {
+      method: "POST",
+      body: formData,
+    });
 
       if (!uploadRes.ok) {
         throw new Error(`Upload failed (${uploadRes.status})`);
@@ -55,7 +56,7 @@ export default function Home(): JSX.Element {
       const parsed: ParsedReport = await uploadRes.json();
 
       // 2) Analyze
-      const analyzeRes = await fetch("http://127.0.0.1:8000/analyze-report/", {
+      const analyzeRes = await fetch(`${backendUrl}/analyze-report/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ parsed_report: parsed, language: lang }),
