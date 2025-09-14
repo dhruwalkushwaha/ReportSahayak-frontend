@@ -10,7 +10,10 @@ type AnalysisResponse = {
   disclaimer?: string;
 };
 
-export default function Home(): JSX.Element {
+import { FC, ReactElement } from "react";
+
+const Home: FC = (): ReactElement => {
+
   const [file, setFile] = useState<File | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, any[]> | null>(null);
