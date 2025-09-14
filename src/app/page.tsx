@@ -207,4 +207,5 @@ const Home: FC = (): ReactElement => {
       </footer>
     </div>
   );
-}
+};
+export default Home;
