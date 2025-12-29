@@ -1,7 +1,19 @@
-body {
-  @apply bg-brand-bg text-brand-text font-sans;
-  @apply dark:bg-dark-bg dark:text-dark-text;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  background-image: radial-gradient(currentColor 1px, transparent 1px);
-  background-size: 20px 20px;
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
 }
