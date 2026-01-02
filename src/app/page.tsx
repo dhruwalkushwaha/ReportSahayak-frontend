@@ -2,7 +2,23 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import { Upload, Activity, Heart, Loader2, AlertCircle } from 'lucide-react';
+import { Upload, Activity, Heart, Loader2, AlertCircle, Globe } from 'lucide-react';
+
+// --- Configuration ---
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'hi', name: 'Hindi (हिंदी)' },
+  { code: 'bn', name: 'Bengali (বাংলা)' },
+  { code: 'te', name: 'Telugu (తెలుగు)' },
+  { code: 'mr', name: 'Marathi (मराठी)' },
+  { code: 'ta', name: 'Tamil (தமிழ்)' },
+  { code: 'ur', name: 'Urdu (اردو)' },
+  { code: 'gu', name: 'Gujarati (ગુજરાતી)' },
+  { code: 'kn', name: 'Kannada (ಕನ್ನಡ)' },
+  { code: 'ml', name: 'Malayalam (മലയാളം)' },
+  { code: 'pa', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+  { code: 'or', name: 'Odia (ଓଡ଼ିଆ)' }
+];
 
 // --- Types ---
 interface AnalysisItem {
@@ -23,7 +39,7 @@ export default function ReportSahayak() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'upload' | 'analyzing' | 'results'>('upload');
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const [language, setLanguage] = useState<string>('en'); // Changed to string to support all codes
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [labName, setLabName] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -46,13 +62,13 @@ export default function ReportSahayak() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      const parsedData = uploadRes.data;
+      const parsedData = uploadRes.data; // { lab_name, data, source }
       setLabName(parsedData.lab_name);
 
-      // 2. Analyze
+      // 2. Analyze & Translate (Sending the selected language)
       const analyzeRes = await axios.post(`${API_URL}/analyze-report/`, {
         parsed_report: parsedData,
-        language: language
+        language: language, 
       });
 
       setAnalysis(analyzeRes.data);
@@ -60,123 +76,158 @@ export default function ReportSahayak() {
     } catch (err: any) {
       console.error(err);
       setStep('upload');
-      setErrorMsg('Failed to analyze. Please ensure the PDF is readable.');
+      setErrorMsg(err.response?.data?.detail || 'Failed to analyze. Please ensure the PDF is readable.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-slate-800 font-sans">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-stone-200 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="bg-red-600 text-white p-2 rounded-lg">
-            <Activity size={20} />
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="text-red-600" size={24} />
+            <span className="font-bangers text-2xl tracking-wide text-slate-800">
+              REPORTSAHAYAK
+            </span>
           </div>
-          <span className="font-bold text-xl tracking-tight text-slate-900">REPORTSAHAYAK</span>
+          
+          {/* Language Selector Dropdown */}
+          <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 border border-slate-200">
+            <Globe size={16} className="text-slate-500" />
+            <select 
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none cursor-pointer"
+              disabled={step === 'analyzing'}
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <select 
-          value={language}
-          onChange={(e) => setLanguage(e.target.value as 'en' | 'hi')}
-          className="bg-stone-100 border-none text-sm font-medium rounded-md px-3 py-2 cursor-pointer hover:bg-stone-200 transition"
-        >
-          <option value="en">English</option>
-          <option value="hi">हिंदी (Hindi)</option>
-        </select>
-      </nav>
+      </header>
 
-      <main className="max-w-3xl mx-auto p-6 mt-6">
-        {/* ERROR MESSAGE */}
+      {/* Main Content */}
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        
+        {/* Error Message */}
         {errorMsg && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 flex items-center gap-3 border border-red-100">
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-red-700 animate-in fade-in slide-in-from-top-2">
             <AlertCircle size={20} />
             <p className="text-sm font-medium">{errorMsg}</p>
           </div>
         )}
 
-        {/* STEP 1: UPLOAD */}
+        {/* Step 1: Upload */}
         {step === 'upload' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-10 text-center hover:border-blue-400 transition-colors duration-300">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 sm:p-12 text-center">
+            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <Upload size={32} />
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-slate-900">Upload Lab Report</h2>
-            <p className="text-slate-500 mb-8 max-w-sm mx-auto">
+            <h1 className="text-3xl font-bold text-slate-900 mb-3 font-comic">
+              Upload Lab Report
+            </h1>
+            <p className="text-slate-500 mb-8 max-w-md mx-auto">
               We support Dr Lal PathLabs, Apollo, Healthians, and most scanned PDF reports.
             </p>
 
-            <label className="block w-full max-w-xs mx-auto mb-4 cursor-pointer">
-              <input 
-                type="file" 
-                accept=".pdf" 
-                className="hidden" 
+            <div className="relative group">
+              <input
+                type="file"
+                accept=".pdf"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               />
-              <div className="bg-slate-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2">
-                {file ? file.name : "Select PDF File"}
+              <div className={`
+                border-2 border-dashed rounded-xl p-4 transition-all
+                ${file ? 'border-green-500 bg-green-50' : 'border-slate-300 group-hover:border-blue-400 group-hover:bg-slate-50'}
+              `}>
+                <div className="flex items-center justify-center gap-3 h-12">
+                  {file ? (
+                    <span className="font-medium text-green-700 truncate max-w-[200px]">
+                      {file.name}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 font-medium">Click to select PDF</span>
+                  )}
+                </div>
               </div>
-            </label>
+            </div>
 
             {file && (
-              <button 
+              <button
                 onClick={handleUpload}
                 disabled={loading}
-                className="w-full max-w-xs bg-green-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2 mx-auto"
+                className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-green-200"
               >
-                {loading ? <Loader2 className="animate-spin" /> : "Analyze Now"}
+                Analyze Now
               </button>
             )}
           </div>
         )}
 
-        {/* STEP 2: LOADING */}
+        {/* Step 2: Loading */}
         {step === 'analyzing' && (
           <div className="text-center py-20">
-            <Loader2 size={64} className="text-blue-600 animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-slate-800">Analyzing Report...</h2>
-            <p className="text-slate-500 mt-2">Reading medical terms & crunching numbers</p>
+            <Loader2 size={48} className="animate-spin text-blue-600 mx-auto mb-6" />
+            <h2 className="text-xl font-bold text-slate-800 animate-pulse">
+              Decoding medical terms...
+            </h2>
+            <p className="text-slate-500 mt-2">This usually takes about 10-15 seconds</p>
           </div>
         )}
 
-        {/* STEP 3: RESULTS */}
+        {/* Step 3: Results */}
         {step === 'results' && analysis && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
             
-            {/* Summary Box */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                  {language === 'hi' ? 'सारांश' : 'SUMMARY'}
-                </h3>
-                {labName && <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">Lab: {labName}</span>}
+            {/* Summary Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                ✨ Summary
+                {labName && <span className="text-xs font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Lab: {labName}</span>}
+              </h2>
+              <p className="text-slate-700 leading-relaxed">
+                {analysis.summary}
+              </p>
+              
+              {/* Disclaimer */}
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <p className="text-xs text-slate-400 italic">
+                  {analysis.disclaimer}
+                </p>
               </div>
-              <p className="text-lg leading-relaxed text-slate-700">{analysis.summary}</p>
             </div>
 
-            {/* Disclaimer */}
-            <div className="bg-amber-50 text-amber-800 text-xs p-4 rounded-lg border border-amber-100">
-              {analysis.disclaimer}
-            </div>
-
-            {/* Details Grid */}
+            {/* Detailed Cards */}
             {Object.entries(analysis.details).map(([category, items]) => (
-              <div key={category} className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-                <div className="bg-stone-50 px-6 py-3 border-b border-stone-200">
-                  <h3 className="font-bold text-slate-700 capitalize">{category}</h3>
+              <div key={category} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-800 text-lg capitalize">
+                    {category}
+                  </h3>
                 </div>
-                <div className="divide-y divide-stone-100">
-                  {items.map((item, i) => (
-                    <div key={i} className="p-5 hover:bg-blue-50/30 transition-colors">
-                      <div className="flex flex-col md:flex-row justify-between gap-4 mb-2">
+                <div className="divide-y divide-slate-100">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="p-6 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-bold text-slate-900">{item.test_name}</h4>
-                          <p className="text-2xl font-bold text-slate-800 mt-1">{item.value}</p>
+                          <h4 className="font-bold text-slate-900 text-base">{item.test_name}</h4>
+                          <span className="text-2xl font-black text-slate-700 font-comic tracking-tight">
+                            {item.value}
+                          </span>
                         </div>
-                        <div className="flex items-start">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase
+                        <div className="flex flex-col items-end">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
                             ${item.status.toLowerCase().includes('normal') ? 'bg-green-100 text-green-700' : 
                               item.status.toLowerCase().includes('high') ? 'bg-red-100 text-red-700' : 
+                              item.status.toLowerCase().includes('low') ? 'bg-orange-100 text-orange-700' :
                               'bg-yellow-100 text-yellow-700'}`}>
                             {item.status}
                           </span>
@@ -184,12 +235,14 @@ export default function ReportSahayak() {
                       </div>
                       
                       {/* Analogy & Explanation */}
-                      <div className="mt-3 space-y-2">
-                        <div className="flex gap-2 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">
+                      <div className="mt-4 space-y-3">
+                        <div className="flex gap-3 text-sm text-slate-600 bg-blue-50/50 p-3 rounded-lg border border-blue-100/50">
                            <Heart size={16} className="text-purple-500 shrink-0 mt-0.5" />
-                           <span className="italic">"{item.analogy}"</span>
+                           <span className="italic font-medium">"{item.analogy}"</span>
                         </div>
-                        <p className="text-sm text-slate-500 pl-1">{item.explanation}</p>
+                        <p className="text-sm text-slate-500 pl-1 leading-relaxed">
+                          {item.explanation}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -199,9 +252,9 @@ export default function ReportSahayak() {
 
             <button 
               onClick={() => { setFile(null); setStep('upload'); }}
-              className="w-full py-4 text-slate-500 hover:text-blue-600 font-medium transition"
+              className="w-full py-4 text-slate-500 hover:text-blue-600 font-medium transition flex items-center justify-center gap-2"
             >
-              ← Analyze another report
+              Analyze another report
             </button>
           </div>
         )}
