@@ -61,7 +61,7 @@ export default function ReportSahayak() {
     const formData = new FormData();
     formData.append('file', file);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://reportsahayak-backend.onrender.com';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://reportsahayak-backend-docker.onrender.com';
 
     try {
       const uploadRes = await axios.post(`${API_URL}/upload-report/`, formData, {
