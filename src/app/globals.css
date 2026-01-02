@@ -3,9 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
+  --foreground-rgb: 15, 23, 42; /* Slate 900 */
+  --background-start-rgb: 248, 250, 252; /* Slate 50 */
   --background-end-rgb: 255, 255, 255;
+}
+
+/* Dark Mode Variables (Slate-950 base) */
+.dark {
+  --foreground-rgb: 241, 245, 249; /* Slate 100 */
+  --background-start-rgb: 2, 6, 23; /* Slate 950 */
+  --background-end-rgb: 15, 23, 42; /* Slate 900 */
 }
 
 body {
@@ -16,4 +23,5 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
 }
