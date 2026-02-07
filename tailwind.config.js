@@ -7,7 +7,12 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        bangers: ['"Impact"', '"Arial Black"', "system-ui", "sans-serif"],
+        comic: ['"Comic Sans MS"', '"Segoe Print"', "system-ui", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };
